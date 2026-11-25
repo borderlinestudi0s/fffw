@@ -19,7 +19,7 @@ rm -rf "$PROJDIR"; mkdir -p "$PROJDIR"
 
 "$GHIDRA_DIR/support/analyzeHeadless" "$PROJDIR" xpro1 \
   -import "$SEG1" \
-  -processor "ARM:LE:32:v5t" \
+  -processor "ARM:LE:32:v7" \
   -loader BinaryLoader -loader-baseAddr 0xe0ec80 \
   -scriptPath "$HERE" \
   -preScript XPro1Loader.java "$SEG_DIR" \

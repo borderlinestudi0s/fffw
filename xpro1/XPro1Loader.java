@@ -5,7 +5,7 @@
 //   seg0 (UI/lens) @ 0x00774000  size 0x254AC0  entry 0x008554C4
 //   seg1 (main)    @ 0x00E0EC80  size 0x3DBB00  entry 0x00F57540
 //
-// Use: import inverted_seg01_*.bin as Raw Binary, Language ARM:LE:32:v5t,
+// Use: import inverted_seg01_*.bin as Raw Binary, Language ARM:LE:32:v7 (NOT v5t: the code uses MOVW/MOVT),
 // Base 00e0ec80; then run this script and pick the folder with the .bin files.
 //@category Fujifilm
 import ghidra.app.script.GhidraScript;

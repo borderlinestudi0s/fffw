@@ -11,3 +11,4 @@ scoped*.txt
 out/
 input/
 proj*/
+*.pkl

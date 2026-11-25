@@ -18,12 +18,19 @@ firmware or a RAM dump stays local (see `.gitignore`).
   live RAM dump:** `seg0` (UI/keys/lens) at `0x00774000`, `seg1` (record
   pipeline) at `0x00E0EC80`. That match also confirms the shipped `FPUPDATE.DAT`
   is the same build the camera runs (3.64).
-- **The firmware is scatter-loaded and mixes ARM and Thumb.** Most of it is
-  stored uncompressed (bit-flipped) in the DAT, not in `fflz` segments.
-- **Confirmed functions (runtime addresses, FW 3.64):**
-  - `0x00966A8C` = `strcpy` (plain byte-copy loop; verified by decompilation).
-  - `0x00041C38` = an ARM name/string helper (copies a string into a small stack
-    buffer, then tail-calls `0x000412F4`).
+- **The CPU is ARMv7 and the code builds addresses with `MOVW`/`MOVT` pairs**,
+  not literal pools. Import as **`ARM:LE:32:v7`**. An ARMv5 (`v5t`) import cannot
+  decode `MOVW`/`MOVT`, so most code turns to garbage, nearly every string
+  reference disappears and the noise looks like Thumb. With v7 the scoped image
+  analyzes in about 2 minutes (33,139 functions, 1.59M instructions) and string
+  references and decompilation just work.
+- **The firmware is scatter-loaded.** Most of it is stored uncompressed
+  (bit-flipped) in the DAT, not in `fflz` segments. Thumb-2 code exists, but the
+  platform library, seg1 and SQLite are ARM mode.
+- **23 platform functions identified**, including the full file API, task
+  creation, sleep, task events, soft timers, key injection and `sqlite_exec`:
+  see [`xpro1_364_stubs.h`](xpro1_364_stubs.h), each tagged confirmed or
+  probable with the evidence.
 
 ## Verified memory map (FW 3.64, runtime addresses)
 
@@ -31,7 +38,7 @@ firmware or a RAM dump stays local (see `.gitignore`).
 |--------|----------|-------|
 | `0x00000000` | ARM exception vector table | live RAM only |
 | `0x00040000`-`0x00100000` | low RTOS code | ARM, incl. `0x41c38` |
-| `0x00100000`-`0x00774000` | large **Thumb** code block | ~9.7k Thumb prologues |
+| `0x00100000`-`0x00774000` | large code block | looked Thumb under the old v5t import; re-check under v7 |
 | `0x00774000`-`0x009C89C0` | seg0 (UI/keys/lens) | fflz in DAT |
 | `0x00E0EC80`-`0x011EA780` | seg1 (record pipeline) | fflz in DAT |
 | `0x01400000`-`0x01700000` | system/library block (SQLite core ~`0x1697000`) | uncompressed |
@@ -68,25 +75,29 @@ Then analyze in Ghidra:
   the aggressive instruction finder invents tens of thousands of bogus functions
   in the data/zero regions, then the decompiler-based analyzers try to process
   all of them. It ran 9+ hours without finishing. Map only the real code regions.
-- **The decompiler-based analyzers (Decompiler Parameter ID / Switch Analysis)
-  are what resolve string references on a raw ARM image, and they are also the
-  ones that hang.** Disabling them stops the hang but leaves string refs
-  unresolved. This is the central tension; a per-model manifest (fffw `ffun`)
-  is the real fix.
-- **ARM `STMFD` prologue scanning is unreliable in the Thumb regions.** Function
-  addresses derived that way in Thumb code are often bogus. Use Ghidra's
-  Thumb-aware analysis for function boundaries there.
+- **Use the ARMv7 language.** Missing string references were never an analyzer
+  problem: the v5t language could not decode the `MOVW`/`MOVT` pairs that carry
+  every address. Raw scanners need the same care: `xref7.py` decodes ARM and
+  Thumb-2 `MOVW`/`MOVT` pairs plus `BL`/`BLX` across the whole dump in seconds.
+- **Prologue scanning is unreliable.** Many functions open with
+  `push {r11, lr}` or `str r11, [sp, #-4]!` rather than a wide `STMFD`, and
+  Thumb-2 code exists. Use Ghidra's function boundaries.
 - **Debug name strings (`Reccf_*`, `KEY_*`, etc.) are stored in enum-indexed
   name tables, not referenced one-to-one by the functions they describe**, so
   they cannot be mapped to functions by a simple string-to-reference search.
 
 ## What is next
 
-Clean function identification (the `NSTUB` table in `xpro1_364_stubs.h`) is
-interactive Ghidra work: navigate the loaded program, set Thumb modes per
-region, follow xrefs, and identify the platform API (`fuji_fopen`,
-`fuji_create_task`, the SQLite calls) by behaviour. That is genuine
-per-function RE, not a batch job.
+The core platform API is mapped. Still open: `fuji_get_error`,
+`fuji_file_wait`/`fuji_file_reset`, `fuji_init_sqlite`, `sqlite_snprintf`,
+`sqlite_mallocAlarm`, `SQLITE_MEM_METHODS`, `MEM_INPUT_MAP` and
+`fuji_screen_write`. Once those are in, the table can move to
+`fujihack/model/xpro1_364.h`.
+
+Useful entry points for further work: the AUTO_ACT script engine in seg1
+(`0x010b4000`-`0x010b6100`, keyword table at `0x010b5f0c`) drives files, keys
+and sleeps from an SD-card script, which makes it the natural first hook for a
+non-flashing mod.
 
 ## Files
 
@@ -99,4 +110,12 @@ per-function RE, not a batch job.
 - `XPro1Decomp.java` / `XPro1DecompAuto.java` - decompile given addresses
   (Auto tries ARM then Thumb).
 - `XPro1Report.java`, `run_ghidra.sh` - headless report + driver.
+- `XPro1Query.java` - read-only batch queries against an analyzed program
+  (`ref`, `lit`, `fn`, `dec`, `dis`, `calls`, `range`).
+- `XPro1ApplyStubs.java` - apply `NSTUB(name, addr)` lines from a header as
+  function names.
+- `xref7.py` - ARMv7-aware xref index over a raw dump (`MOVW`/`MOVT`, LDR
+  literal, `BL`/`BLX`): `str`, `refs`, `callers`.
+- `dis.py` - disassemble a slice of a raw dump as ARMv7 or Thumb-2 with
+  `llvm-objdump` (no objcopy needed).
 - `xpro1_364_stubs.h` - WIP stub header (for eventual `fujihack/model/`).
