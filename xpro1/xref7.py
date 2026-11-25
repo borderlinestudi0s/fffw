@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ARMv7-aware cross-reference index for the X-Pro 1 RAM dump (FW 3.64).
+ARMv7-aware cross-reference index for the X-Pro 1 RAM dump (FW 3.82).
 
 The firmware builds addresses with MOVW/MOVT pairs (ARMv7), not literal pools,
 so v5-era LDR-literal scans and a v5t Ghidra import miss almost every string

@@ -1,6 +1,6 @@
 # Fujifilm X-Pro 1 (EXR Pro) reverse-engineering starting point
 
-Tooling and findings for the Fujifilm **X-Pro 1**, firmware **3.64**. The X-Pro 1
+Tooling and findings for the Fujifilm **X-Pro 1**, firmware **3.82**. The X-Pro 1
 was essentially unmapped (fujihack's `model/xpro1_382.h` has no function stubs),
 so this is a foundation to build on, not a finished mod.
 
@@ -17,7 +17,9 @@ firmware or a RAM dump stays local (see `.gitignore`).
 - **Two app-layer segments decompress and were confirmed byte-for-byte against a
   live RAM dump:** `seg0` (UI/keys/lens) at `0x00774000`, `seg1` (record
   pipeline) at `0x00E0EC80`. That match also confirms the shipped `FPUPDATE.DAT`
-  is the same build the camera runs (3.64).
+  is the same build the camera runs: public firmware **3.82**. (The FF80
+  service port reports internal version "3.64", which is the internal number
+  for 3.82, not a different release.)
 - **The CPU is ARMv7 and the code builds addresses with `MOVW`/`MOVT` pairs**,
   not literal pools. Import as **`ARM:LE:32:v7`**. An ARMv5 (`v5t`) import cannot
   decode `MOVW`/`MOVT`, so most code turns to garbage, nearly every string
@@ -29,10 +31,10 @@ firmware or a RAM dump stays local (see `.gitignore`).
   platform library, seg1 and SQLite are ARM mode.
 - **23 platform functions identified**, including the full file API, task
   creation, sleep, task events, soft timers, key injection and `sqlite_exec`:
-  see [`xpro1_364_stubs.h`](xpro1_364_stubs.h), each tagged confirmed or
+  see [`xpro1_382_stubs.h`](xpro1_382_stubs.h), each tagged confirmed or
   probable with the evidence.
 
-## Verified memory map (FW 3.64, runtime addresses)
+## Verified memory map (FW 3.82, runtime addresses)
 
 | region | contents | notes |
 |--------|----------|-------|
@@ -92,7 +94,7 @@ The core platform API is mapped. Still open: `fuji_get_error`,
 `fuji_file_wait`/`fuji_file_reset`, `fuji_init_sqlite`, `sqlite_snprintf`,
 `sqlite_mallocAlarm`, `SQLITE_MEM_METHODS`, `MEM_INPUT_MAP` and
 `fuji_screen_write`. Once those are in, the table can move to
-`fujihack/model/xpro1_364.h`.
+fujihack's existing `model/xpro1_382.h` (same version).
 
 Useful entry points for further work: the AUTO_ACT script engine in seg1
 (`0x010b4000`-`0x010b6100`, keyword table at `0x010b5f0c`) drives files, keys
@@ -118,4 +120,4 @@ non-flashing mod.
   literal, `BL`/`BLX`): `str`, `refs`, `callers`.
 - `dis.py` - disassemble a slice of a raw dump as ARMv7 or Thumb-2 with
   `llvm-objdump` (no objcopy needed).
-- `xpro1_364_stubs.h` - WIP stub header (for eventual `fujihack/model/`).
+- `xpro1_382_stubs.h` - WIP stub header (for fujihack `model/xpro1_382.h`).

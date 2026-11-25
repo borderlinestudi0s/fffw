@@ -1,6 +1,6 @@
 // Apply NSTUB(name, addr) lines from a fujihack-style stub header as function
 // names in the current program. Commented-out stubs are skipped.
-// Arg 0: path to the header (e.g. xpro1_364_stubs.h)
+// Arg 0: path to the header (e.g. xpro1_382_stubs.h)
 //@category XPro1
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.address.Address;

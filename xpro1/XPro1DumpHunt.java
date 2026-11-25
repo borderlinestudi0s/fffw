@@ -19,7 +19,7 @@ public class XPro1DumpHunt extends GhidraScript {
     public void run() throws Exception {
         FunctionManager fm = currentProgram.getFunctionManager();
         Listing l = currentProgram.getListing();
-        println("=================== XPRO1 DUMP REPORT (FW 3.64) ===================");
+        println("=================== XPRO1 DUMP REPORT (FW 3.82) ===================");
         println("functions    : " + fm.getFunctionCount());
         println("instructions : " + l.getNumInstructions());
 

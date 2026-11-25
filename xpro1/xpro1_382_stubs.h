@@ -1,8 +1,13 @@
 /*
- * Fujifilm X-Pro 1, firmware 3.64 - stub table (work in progress).
+ * Fujifilm X-Pro 1, firmware 3.82 - stub table (work in progress).
+ *
+ * Version note: the camera's FF80 service port reports internal version
+ * "3.64", which is the internal number for public firmware 3.82 (the
+ * FPUPDATE.DAT with SHA-256 709e26f6...5d33236). These stubs belong with
+ * fujihack's model/xpro1_382.h.
  *
  * All addresses are runtime addresses, verified against a live ff80 RAM dump
- * (FW 3.64) by decompiling in Ghidra with the ARM:LE:32:v7 language.
+ * (FW 3.82) by decompiling in Ghidra with the ARM:LE:32:v7 language.
  *
  * IMPORTANT: this firmware is ARMv7 and builds almost every address with
  * MOVW/MOVT pairs instead of literal pools. Import it as ARM:LE:32:v7. An
@@ -18,7 +23,7 @@
  */
 
 #define MODEL_NAME "Fujifilm X-Pro1"
-#define FIRMWARE_VERSION "3.64"
+#define FIRMWARE_VERSION "3.82"
 
 /* Code is ARM mode in the platform/library areas used below. Thumb-2 exists
  * elsewhere in the image, so do not assume CODE_ARM everywhere. */
