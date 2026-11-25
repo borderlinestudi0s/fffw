@@ -1,9 +1,13 @@
-# Never commit firmware or anything derived from it (Fujifilm copyright)
+# Never commit firmware, memory dumps, or anything derived from them.
+# (Fujifilm copyright; RAM dumps also contain the device serial.)
 *.DAT
 *.bin
 *.elf
+*.csv
+*_report.txt
+thumb_check.txt
+scoped*.txt
+*.gpr
 out/
 input/
-strings_map.csv
-symbols_of_interest.csv
-proj/
+proj*/
